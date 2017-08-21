@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Canlendar</title>
+	<meta charset="utf-8">
+	<script type="text/javascript" src="vue.min.js"></script>
+
+	<style>
+	  * {
+	  	margin:0;
+	  	padding:0;
+	  }
+	  .canlendar {
+	  	width:1000px;
+	  	height:530px;
+	  	margin:0 auto;
+	  }
+	  h1 {
+	  	padding: 10px 0;
+	  	text-align: center;
+	  }
+	  table {
+	  	width:100%;
+	  	border-collapse:collapse;
+	  }
+	  table.bgtable thead tr th {
+	  	height: 30px;
+	  }
+	   table.bgtable tbody tr td {
+	   	height:100px;
+	   	border:1px solid #ccc;
+		box-sizing:border-box;
+		text-align: right;
+		vertical-align: top;
+		padding: 4px;
+	   }
+	   .gray {
+	   	color:#aaa;
+	   }
+
+	   .tablebox2 {
+	   	position:absolute;
+	   	top:30px;	   	
+	   	width: 1000px;
+	   	height: 600px;
+	   	/*border:1px solid red;*/
+	   	padding-top: 62px;
+
+	   }
+	   .tablebox2  .row {
+	   	height: 100px;
+	   	/*border:1px solid blue;*/
+	   	box-sizing: border-box;
+	   	padding-top: 30px;
+	   }
+	   .tablebox2  .row .schelduletable {
+	   	width: 100%;
+	   	height: 70px;
+	   	
+	   	top:30px;
+	   }
+	   .tablebox2  .row .schelduletable tr {
+	   	width:100%;
+	   	height: 20px;
+	   	
+	   }
+	   .tablebox2  .row .schelduletable tr td {
+	   	width:14.2857%;
+	   	padding-left: 2px;
+	   	box-sizing: border-box;
+	   }
+	   .tablebox2  .row .schelduletable tr .s {
+	   	border-radius: 15px;
+	   	font-size: 12px;
+	   	height: 20px;
+	   	line-height: 20px;
+	   	padding-left: 10px;
+	   }
+	   .tablebox2  .row .schelduletable tr .s.life {
+	    background: -webkit-linear-gradient(#4b73e4, #050561); /* Safari 5.1 - 6.0 */
+        background: -o-linear-gradient(#4b73e4, #050561); /* Opera 11.1 - 12.0 */
+        background: -moz-linear-gradient(#4b73e4, #050561); /* Firefox 3.6 - 15 */
+        background: linear-gradient(#4b73e4, #050561); /* 标准的语法 */
+        color: #fff;
+	   }
+	   .tablebox2  .row .schelduletable tr .s.work {
+	   	background: -webkit-linear-gradient(#c5f16c, #598009); /* Safari 5.1 - 6.0 */
+        background: -o-linear-gradient(#c5f16c, #598009); /* Opera 11.1 - 12.0 */
+        background: -moz-linear-gradient(#c5f16c,#598009); /* Firefox 3.6 - 15 */
+        background: linear-gradient(#c5f16c,#598009); /* 标准的语法 */
+        color: #fff;
+	   }
+	   	.tablebox2  .row .schelduletable tr .s.study {
+	   	background: -webkit-linear-gradient(#f5435c, #7d091a); /* Safari 5.1 - 6.0 */
+        background: -o-linear-gradient(#f5435c,#7d091a); /* Opera 11.1 - 12.0 */
+        background: -moz-linear-gradient(#f5435c,#7d091a); /* Firefox 3.6 - 15 */
+        background: linear-gradient(#f5435c,#7d091a); /* 标准的语法 */
+        color: #fff;
+	   }
+	</style>
+</head>
+<body>
+	<div class="canlendar" id="canlendar">
+		<h1>{{year}} - {{month}}</h1>
+		<div class="tablebox1">
+			<table class="bgtable">
+				<!-- <caption><h1>{{year}}</h1></caption> -->
+				<thead>
+					<th v-for="(item,index) in daynamearr">{{item}}</th>
+				</thead>
+				<tbody>
+					<tr v-for="(week,index) in theweek()">
+					  <td v-for="(item,idx) in week" v-bind:class="{'gray':item.prevmonth || item.nextmonth}">{{item.day}}</td>						
+					</tr>
+
+				</tbody>
+			</table>
+		</div>
+		<div class="tablebox2">
+			<div class="row" v-for="(row,index1) in domdata">
+				<table class="schelduletable">
+					<tr  v-for="(line,index2) in row">
+						<td v-for="(td,index3) in line" v-bind:colspan="td.colspan">
+							<div v-if="td.title" v-bind:class="['s',td.type]">{{td.title}}</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+			
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		new Vue({
+			el:'#canlendar',
+			data: {
+				daynamearr: ["周日","周一","周二","周三","周四","周五","周六"],
+				//需要知道这个月的第一天星期几
+				//上一个月最后一天是几号
+				//这个月有几天
+				dayarr:[],
+				year:2017,
+				month:5,
+				domdata: [],
+				scheldules: [
+					{"title":"开会","start":"20170430","end":"20170502","type":"work"},
+					{"title":"弹钢琴","start":"20170510","end":"20170512","type":"work"},
+					{"title":"打球","start":"20170509","end":"20170510","type":"life"},
+					{"title":"玩游戏","start":"20170524","end":"20170526","type":"life"},
+					{"title":"学习","start":"20170508","end":"20170525","type":"study"},
+				],
+				//记录每天事情数，比如9号有一个事情持续了3天，此时9、10、11的事情数1
+				daythingsnumber:[
+					[0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0],
+					[0,0,0,0,0,0,0],	
+					[0,0,0,0,0,0,0]	
+				]
+			},
+			mounted:function() {
+				var dayarr = [];
+				//知道这个月的第一天星期几
+				var theMonth1stDay = (new Date(this.year,this.month-1,1).getDay());
+				//alert(theMonth1stDay);
+				//这个月有几天：这个月最后一天就是下个月第一天减1毫秒的那天
+				var y = this.month == 12?this.year+1:this.year;
+				var m = this.month == 12?1:this.month+1;
+				var theMonthDaysMount = new Date(new Date(y,m,1)-1).getDate();
+				//alert(theMonthDaysMount)
+				//上一个月最后一天是几号：上一个月的最后一天是几号，就是这个月的第一天减1毫秒的那天
+				var prevMonthLastDay = new Date(new Date(this.year,this.month-1,1)-1).getDate();
+				var _y = this.month == 1?this.year-1:this.year;//上一个月所在的年
+				var _m = this.month == 1?12:this.month-1;//上一个月
+
+				//alert(prevMonthLastDay)
+				//这个月的第一天星期几，就要放入几个上个月的尾巴
+				//occupation表示这一天有哪些行被占用了
+				while(theMonth1stDay-- >0) {
+					dayarr.unshift({"day":prevMonthLastDay--,"year":_y,"month":_m,"prevmonth":true,"occupation":[]});
+				}
+				//放置本月日期
+				var count = 0;
+				while(theMonthDaysMount--) {
+					dayarr.push({"day":++count,"year":this.year,"month":this.month,"occupation":[]});
+				}
+				//补足35天或者42天
+				var c = 35-dayarr.length
+				var count2 = 0;
+				if(dayarr.length<35) {
+					while(dayarr.length != 35) {
+						dayarr.push({"day":++count2,"year":y,"month":m,"nextmonth":true,"occupation":[]});
+					}
+				}else {
+					while(dayarr.length != 42) {
+						dayarr.push({"day":++count2,"year":y,"month":m,"nextmonth":true,"occupation":[]});
+					}
+				}
+				
+				this.dayarr = dayarr;
+
+				//调用函数
+				this.calcDomData(dayarr,this.scheldules,this.daythingsnumber);
+			},
+			methods: {
+				theweek(){
+					var _arr = [];
+					for(var i=0;i<this.dayarr.length/7;i++) {
+						var _week = [];
+						for(var j=0;j<7;j++) {
+							_week.push(this.dayarr[i*7+j]);
+						}
+						_arr.push(_week);
+					}
+					return _arr;
+				},
+				calcDomData(dayarr,scheldules,daythingsnumber){
+					//第一个问题：返回的数组中每一项代表哪天
+					var domdata = dayarr.length == 42?[
+						[[],[],[]],
+						[[],[],[]],
+						[[],[],[]],
+						[[],[],[]],
+						[[],[],[]],
+						[[],[],[]]
+					]:[
+						[[],[],[]],
+						[[],[],[]],
+						[[],[],[]],
+						[[],[],[]],
+						[[],[],[]]
+					];
+					//要往内部放置默认的td
+					/*domdata.forEach(function(row,index1) {
+						row.forEach(function(line,index2) {
+							for(var i=0;i<7;i++) {
+								var theday = dayarr[index1*7 +i]
+								line.push({"year":theday.year,"month":theday.month,"day":theday.day,"baseline":"0"});
+								//console.log(dayarr[index1*7 +i])
+							}
+						}) 
+					});
+
+					scheldules.forEach(function(scheldule,index){
+						//依次探访每一个事件
+						var startyear = parseInt(scheldule.start.substr(0,4));
+						var startmonth = parseInt(scheldule.start.substr(4,2));
+						var startday = parseInt(scheldule.start.substr(6,2));
+						//console.log(year,month,day)
+						var endyear = parseInt(scheldule.end.substr(0,4));
+						var endmonth = parseInt(scheldule.end.substr(4,2));
+						var endday = parseInt(scheldule.end.substr(6,2));
+
+						//算日期的跨度
+						var colspan = (new Date(endyear,endmonth,endday)-new Date(startyear,startmonth,startday))/(1000*60*60*24)+1;
+
+
+						//遍历刚刚生成的domdata
+						domdata.forEach(function(row,index1) {
+						row.forEach(function(line,index2) {
+							for(var i=0;i<7;i++) {
+								//遍历到的小格
+								let thetd = line[i];
+								//如果这个小格的年月日和我们正在探访的事件，加上title
+								if(thetd.year == startyear && thetd.month == startmonth && thetd.day == startday ) {
+									thetd.title = scheldule.title;
+									thetd.colspan = colspan;
+									thetd.type = scheldule.type;
+									//不考虑跨周
+									for(var nn = i;nn<i+colspan;nn++) {
+										line[nn].baseline++;
+									}
+									
+								}
+							}
+						}) 
+					});
+
+					})*/
+					//第二个问题：每一个日程要写在哪个line中
+					//第三个问题：添加ciolspan的小格，此时要注意删除这一行的多余小格
+					//第四个问题：跨周
+					//console.log(domdata)
+					
+					//遍历每一行（周）
+					for(var rowindex = 0;rowindex<dayarr.length/7;rowindex++) {
+						//化整为零：将dayarr这个35项或42项的数组，变为一个个小数组
+						var weekarr = dayarr.slice(rowindex*7,rowindex*7+7);
+						//console.log(weekarr)
+						
+						//遍历这一周的事情
+						weekarr.forEach(function(theday,index){
+							//theday将依次表示每一天，共35个或42个
+							//要将天和事件产生联系
+							
+							//thedayschedules表示这一天要做的所有事情
+							var thedayschedules = []
+							//探访所有事件，将所有今天发生的事件推入今天事件的数组
+							//遍历所有事件
+							scheldules.forEach(function(theschedule,index2){
+								//事件的开始时间
+								var startyear = Number(theschedule.start.substr(0,4));
+								var startmonth = Number(theschedule.start.substr(4,2));
+								var startday = Number(theschedule.start.substr(6,2));
+
+								//事件的结束时间
+								var endyear = Number(theschedule.end.substr(0,4));
+								var endmonth = Number(theschedule.end.substr(4,2));
+								var endday = Number(theschedule.end.substr(6,2));
+								//console.log(startyear,startmonth,startday)
+								theschedule.colspan = (new Date(endyear,endmonth-1,endday)-new Date(startyear,startmonth-1,startday))/(1000*60*60*24)+1;
+								//这个事件是不是在这一天发生
+								if(startyear == theday.year && startmonth == theday.month && startday == theday.day) {
+									//console.log(theschedule.title)
+									thedayschedules.push(theschedule);
+									
+								}
+
+							});
+
+							//console.log(thedayschedules)
+							//遍历三个line事件
+							
+							
+
+							for(let line=0;line<3;line++) {
+								
+								if(theday.occupation.indexOf(line)== -1) {
+									var first = thedayschedules.shift();
+									if(first === undefined) {
+									domdata[rowindex][line].push({"title":"","colspan":1})
+								}else {
+									domdata[rowindex][line].push({"title":first.title,"colspan":first.colspan,"type":first.type});
+									//将这一天和后面的colspan天的occupation中加入行号
+									if(first.colspan && first.colspan != 1) {
+										let end = index + first.colspan-1>6?6:index + first.colspan-1;
+										//还剩
+										let rest = (first.colspan - (7 - index));
+										//本周
+										for(let _i = index+1;_i<=end;_i++){
+											
+											weekarr[_i].occupation.push(line);
+										}
+										var _rest; //本周还剩
+										var count = 0;//数量，与当前正在遍历的周差了几天
+										while(rest>0) {
+											_rest = rest>7?7:rest;
+											rest -= _rest;
+											count++;
+											var nextweek = dayarr.slice((rowindex+count)*7,(rowindex+count)*7+7);
+										domdata[rowindex+count][line].push({"title":first.title,"colspan":_rest,"type":first.type});
+										for(let _i=0;_i<_rest;_i++) {
+											nextweek[_i].occupation.push(line)
+										}
+										}
+										//下一周
+										
+									}
+								}
+								}
+								
+							}
+							
+							
+						});
+					}
+					this.domdata = domdata;
+				}
+			}
+		})
+	</script>
+</body>
+</html>
